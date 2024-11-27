@@ -1,21 +1,20 @@
 import React, {useRef, useState, useEffect } from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { Audio } from 'expo-av';
 
 import {
-  Button,
-  Pressable,
-  DrawerLayoutAndroid,
-  StatusBar,
-  Text,
-  StyleSheet,
-  View,
-  Alert,
+  KeyboardAvoidingView, 
+  Platform, 
+  View, 
+  Text, 
+  Button, 
+  TextInput, 
+  Image, 
+  Pressable, 
+  ScrollView, 
+  Alert, 
   Dimensions,
-  TextInput,
-  ScrollView,
-  TouchableOpacity,
-  Platform,
-  Image
+  StyleSheet
 } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
@@ -85,32 +84,83 @@ const [imgEngrenagem, setImgEngrenagem] = useState(require('./assets/Screenshot_
     setMais(false);
   };
   const esconderMais = () => {
+    setImgLembrete(require('./assets/Screenshot_2-removebg-preview.png'));
+    setImgLoja(require('./assets/bt-01-removebg-preview.png'));
+    setImgSininho(require('./assets/Screenshot_5-removebg-preview.png'));
+    setImgEngrenagem(require('./assets/Screenshot_6-removebg-preview (1).png'));
+
     setLembrete(false);
     setLoja(false);
     setSininho(false);
     setEngrenagem(false);
     setMais(true);
   };
-  
   const [alarmTime, setAlarmTime] = useState(new Date());
 	const [showTimePicker, setShowTimePicker] = useState(false);
   const [text, setText] = useState('');
+  const [text1, setText1] = useState('');
+  const [horas, setHoras] = useState('');
+  const [displayAlarme, setDisplayAlarme] = useState(false);
   const [alarmes, setAlarmes] = useState([
-    { nome_alarme: "lucas", horas: 10, minutos: 50, index: 0 },
-    { nome_alarme: "dorflex", horas: 11, minutos: 50, index: 1 },
-    { nome_alarme: "remedio", horas: 10, minutos: 50, index: 2 },
-    { nome_alarme: "buscopan", horas: 10, minutos: 42, index: 3 },
+    { nome_alarme: "lucas", horas: 10, minutos: 50, index: 0, status: true },
+    { nome_alarme: "dorflex", horas: 11, minutos: 50, index: 1, status: true },
+    { nome_alarme: "remedio", horas: 10, minutos: 50, index: 2, status: true },
+    { nome_alarme: "buscopan", horas: 22, minutos: 30, index: 3, status: true },
   ])
+  const [sound, setSound] = useState();
+
+  async function tocarSom() {
+    // Carregar o som
+    const { sound } = await Audio.Sound.createAsync(
+      require('./assets/sons/som.mp3') // Substitua pelo caminho do seu arquivo de som
+    );
+    setSound(sound);
+
+    // Tocar o som
+    await sound.playAsync();
+  }
+  React.useEffect(() => {
+    return sound
+      ? () => {
+          sound.unloadAsync();
+        }
+      : undefined;
+  }, [sound]);
 
   const verificarAlarmeExistente = (nome) => {
     return alarmes.some(alarme => alarme.nome_alarme === nome);
   };
-  const verificarAlarme = (horas, minutos) => {
-    return alarmes.some(alarme => alarme.horas === horas && alarme.minutos === minutos);
+
+  const retornarText = (horas, minutos) =>{
+    const alarmeCorrespondente = alarmes.find(alarme => alarme.horas === horas && alarme.minutos === minutos);
+    var response = {
+      alarme: alarmeCorrespondente.nome_alarme,
+      horas: alarmeCorrespondente.horas,
+      minutos: alarmeCorrespondente.minutos
+    }
+    return response
+  }
+
+  const verificarAlarme = (horas, minutos, segs) => {
+    // Encontrando o alarme correspondente
+    const alarmeCorrespondente = alarmes.find(alarme => alarme.horas === horas && alarme.minutos === minutos);
+    if (alarmeCorrespondente && segs <= 1) {
+      // Atualizando o status do alarme
+      setAlarmes(prevAlarmes =>
+        prevAlarmes.map(alarme =>
+          alarme.horas === horas && alarme.minutos === minutos
+            ? { ...alarme, status: false } // Atualiza apenas o alarme correspondente
+            : alarme // Deixa os outros alarmes inalterados
+        )
+      );
+    }
+
+    // Retorna true ou false baseado na verificação do alarme
+    
+    return alarmes.some(alarme => alarme.horas === horas && alarme.minutos === minutos && alarme.status == true);
   };
 
   const adicionar_alarme = () =>{
-    console.log(alarmes)
     var nome_alarme = text.toLowerCase()
     if(verificarAlarmeExistente(nome_alarme)){
       alert("Ja existe um alarme com esse nome!")
@@ -125,13 +175,15 @@ const [imgEngrenagem, setImgEngrenagem] = useState(require('./assets/Screenshot_
       nome_alarme: nome_alarme,
       horas: alarmTime.getHours(), 
       minutos: alarmTime.getMinutes(),
-      index: (alarmes[alarmes.length - 1].index +1)
+      index: (alarmes[alarmes.length - 1].index +1),
+      status: true
     }
     noveo_alarme.push(alarme)
     setAlarmes(noveo_alarme)
     alert("Alarme adicionado!")
     setText('')
   }
+
 
   const showTimePickerModal = () => {
 		setShowTimePicker(true);
@@ -140,164 +192,195 @@ const [imgEngrenagem, setImgEngrenagem] = useState(require('./assets/Screenshot_
 	const hideTimePickerModal = () => {
 		setShowTimePicker(false);
 	};
-
+  
+  const pararSom = () => {
+    setDisplayAlarme(false)
+    if (soundRef.current) {
+      soundRef.current
+      soundRef.current.unloadAsync();
+      setSound(null);
+    }
+  }
 	const handleTimeChange = (event, selectedTime) => {
 		hideTimePickerModal();
 		if (selectedTime) {
 			setAlarmTime(selectedTime);
-      // console.log(selectedTime.getHours())
 		}
 	};
+  const soundRef = useRef(sound);
+  useEffect(() => {
+    soundRef.current = sound; // Atualiza a referência sempre que 'sound' mudar
+  }, [sound]);
 
-		const checkAlarm = setInterval(() => {
+  useEffect(() => {
+    const checkAlarm = setInterval(() => {
 			const currentTime = new Date();
-      // console.log(currentTime.getHours())
 
-			if (
-        verificarAlarme(currentTime.getHours(), currentTime.getMinutes()) && (currentTime.getSeconds() >= 0 && currentTime.getSeconds() <= 3)
-			) {
-				// Matched the set alarm time, show an alert
-				Alert.alert("Alarm", "It is time!");
-				// Stop checking once the alert is shown
-				clearInterval(checkAlarm); 
+			if (verificarAlarme(currentTime.getHours(), currentTime.getMinutes(), currentTime.getSeconds()) && currentTime.getSeconds() <= 1) {
+				// mensagens que vao ser exibidas quando o alarme tocar(nome do alarme e hora do mesmo)
+        var texto1 = retornarText(currentTime.getHours(), currentTime.getMinutes()).alarme;
+        var texto2 = retornarText(currentTime.getHours(), currentTime.getMinutes()).horas;
+        var texto3 = retornarText(currentTime.getHours(), currentTime.getMinutes()).minutos;
+        var horas = `${texto2} : ${texto3}`
+        setText1(texto1);
+        setHoras(horas);
+
+        console.log(texto1, texto2, texto3)
+        setDisplayAlarme(true)
+				// Alert.alert(texto1, horas, [{ text: "OK", onPress: () => {
+        //   if (soundRef.current) {
+        //     soundRef.current
+        //     soundRef.current.unloadAsync();
+        //     setSound(null);
+        //   }
+        // }}]);
+        tocarSom()
 			}
 		}, 1000); // Check every second
-		// Cleanup on component unmount
+    return () => clearInterval(checkAlarm);
+  }, [alarmes]);
+  
 
-  return (
-    <View style={styles.container}>
-        {lembrete && (<View style={[styles.box, { width: width * 0.9 }]}>
-
-          <View style={styles.parent}>
-          <ScrollView style={styles.box1}>
-          {alarmes.map((alarme, index) => (
-           index !==0 && (<View key={index} style={styles.rectangle}>
-            <Text style={styles.text_alarm}>{alarme.nome_alarme.toUpperCase(0)}</Text>
-            <Text style={styles.text_alarm_hora}>{alarme.horas}:{alarme.minutos}</Text>
+    return (
+      <KeyboardAvoidingView
+        style={{ flex: 1 }} // Flex: 1 para que ocupe a tela inteira
+      >
+        <View style={styles.container}>
+          {lembrete && (
+            <View style={[styles.box, { width: width * 0.9 }]}>
+              <View style={styles.parent}>
+                <ScrollView style={styles.box1}>
+                  {alarmes.map((alarme, index) => (
+                    index !== 0 && (
+                      <View key={index} style={styles.rectangle}>
+                        <Text style={styles.text_alarm}>{alarme.nome_alarme.toUpperCase(0)}</Text>
+                        <Text style={styles.text_alarm_hora}>{alarme.horas}:{alarme.minutos}</Text>
+                      </View>
+                    )
+                  ))}
+                </ScrollView>
+              </View>
             </View>
-            )
-        ))}
-          </ScrollView>
-        </View>
-        </View>)}
-        {loja && (<View style={[styles.box, { width: width * 0.9 }]}>
-          <Text style={[styles.boxText]}>Este é o componente loja</Text>
-          
-        </View>)}
-        {sininho && (<View style={[styles.box, { width: width * 0.9 }]}>
-          <Text style={[styles.boxText]}>Este é o componente sininho</Text>
-        </View>)}
-        {/* componente engrenagem: */}
-        {engrenagem && (<View style={[styles.box, { width: width * 0.9 }]}>
-          <Pressable style={styles.button}>
-            <Text style={styles.buttonText}>Notificações</Text>
-          </Pressable>
+          )}
 
-          <Pressable style={styles.button}>
-            <Text style={styles.buttonText}>Ajustes e Acessibilidade</Text>
-          </Pressable>
+{displayAlarme && (
+          <View style={styles.box_display_alarme}>
+              <Text>{text1}</Text>
+              <Text>{horas}</Text>
+            <View style={styles.ok_box}>
+              <Text style={styles.ok} onPress={pararSom}>OK</Text>
+            </View>
+          </View>
+        )}
+  
+          {loja && (
+            <View style={[styles.box, { width: width * 0.9 }]}>
+              <Text style={[styles.boxText]}>Este é o componente loja</Text>
+            </View>
+          )}
+  
+          {sininho && (
+            <View style={[styles.box, { width: width * 0.9 }]}>
+              <Text style={[styles.boxText]}>Este é o componente sininho</Text>
+            </View>
+          )}
+  
+          {engrenagem && (
+            <View style={[styles.box, { width: width * 0.9 }]}>
+              <Pressable style={styles.button}>
+                <Text style={styles.buttonText}>Notificações</Text>
+              </Pressable>
+              <Pressable style={styles.button}>
+                <Text style={styles.buttonText}>Ajustes e Acessibilidade</Text>
+              </Pressable>
+              <Pressable style={styles.button}>
+                <Text style={styles.buttonText}>Idiomas</Text>
+              </Pressable>
+              <Pressable style={styles.button}>
+                <Text style={styles.buttonText}>Ajuda e Suporte</Text>
+              </Pressable>
+            </View>
+          )}
+  
+  {mais && (
+  <View style={[styles.box_mais, { width: width * 0.9 }]}>
+    <View style={styles.header}></View>
+    <View style={styles.clockContainer}>
+      <Text style={styles.clockText} onPress={showTimePickerModal}>
+        {`${alarmTime.getHours().toString().padStart(2, '0')}:${alarmTime.getMinutes().toString().padStart(2, '0')}`}
+      </Text>
+    </View>
+    
+    {showTimePicker && (
+      <DateTimePicker
+        value={alarmTime}
+        mode="time"
+        is24Hour={true}
+        display="spinner"
+        onChange={handleTimeChange}
+      />
+    )}
 
-          <Pressable style={styles.button}>
-            <Text style={styles.buttonText}>Idiomas</Text>
-          </Pressable>
-
-          <Pressable style={styles.button}>
-            <Text style={styles.buttonText}>Ajuda e Suporte</Text>
-          </Pressable>
-        </View>)}
-        {/* maaaaaaaaaaiiiiissss */}
-        {mais && (<View style={[styles.box_mais, { width: width * 0.9 }]}>
-          <View style={styles.header}>
-			</View>
-
-			<View style={styles.clockContainer}>
-				<Text style={styles.clockText} onPress={showTimePickerModal}>
-					{alarmTime.toLocaleTimeString([], {
-            hour: "2-digit",
-						minute: "2-digit",
-					})}
-				</Text>
-			</View>
-          
-			{showTimePicker && (
-				<DateTimePicker
-					value={alarmTime}
-					mode="time"
-					is24Hour={true}
-					display="spinner"
-					onChange={handleTimeChange}
-				/>
-			)}
-
-      <View style={styles.button_input}>
+    {/* Substitua este trecho pelo código corrigido */}
+    <View style={styles.weekdayContainer}>
+      {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((day, index) => (
+        <Pressable key={index} style={styles.dayButton}>
+          <Text style={styles.dayText}>{day}</Text>
+        </Pressable>
+      ))}
+    </View>
+    {/* Fim da substituição */}
+    
+    <View style={styles.button_input}>
       <Text style={styles.text_input}>Digite o nome do alarme</Text>
-      
-      {/* Campo de texto */}
       <TextInput
-        style={styles.input}  // Estilo para o input
-        value={text}           // O valor do input vem do estado 'text'
-        onChangeText={setText} // Atualiza o estado 'text' com o que o usuário digitar
-        placeholder="Digite aqui . . ." // Texto sugerido quando o campo está vazio
+        style={styles.input}
+        value={text}
+        onChangeText={setText}
+        placeholder="Digite aqui . . ."
       />
-      </View>
-      <Button
-      style={styles.button_salvar}
-      color="#FFAF32"
-      title='Salvar'
-      onPress = {adicionar_alarme}
-      />
-      
-      {/* Exibir o que o usuário digitou */}
-        </View>)}
-
-        <View style={styles.navBar}>
-          <Pressable style={styles.btSininho} onPress={esconderSininho}>
-          <Image
-              source={imgSininho}
-              style={{width: 32, height: 42}}
-              />
-          </Pressable>
-          <Pressable style={styles.btEngrenagem} onPress={esconderEngrenagem}>
-          <Image
-            source={imgEngrenagem}
-            style={{width: 38, height: 38}}
-            />
-          </Pressable>
-          <Pressable style={styles.btLembrete} onPress={esconderLembrete}>
-          <Image
-              source={imgLembrete}
-              style={{width: 38, height: 38}}
-              />
-          </Pressable>
-          
-          <Pressable style={styles.btLoja} onPress={esconderLoja}>
-          <Image
-            source={imgLoja}
-            style={{width: 38, height: 38}}
-            />
-          </Pressable>
-          
-          <Pressable style={styles.btAddLembrete} onPress={esconderMais}>
-          <Image
-            source={require('./assets/bt-add-lembrete.png')}
-            style={{width: 60, height: 60}}
-            />
-          </Pressable>
-          <Image
-            source={require('./assets/nav-bar.png')}
-            style={styles.imageNavBar}
-            />
-        </View>
+    </View>
+    <View style={styles.button_salvar_container}>
+  <Pressable style={styles.button_salvar} onPress={adicionar_alarme}>
+    <Text style={styles.button_salvar_text}>Salvar</Text>
+  </Pressable>
 </View>
-  );
-};
 
+  </View>
+)}
+
+          <View style={styles.navBar}>
+            <Pressable style={styles.btSininho} onPress={esconderSininho}>
+              <Image source={imgSininho} style={{ width: 32, height: 42 }} />
+            </Pressable>
+            <Pressable style={styles.btEngrenagem} onPress={esconderEngrenagem}>
+              <Image source={imgEngrenagem} style={{ width: 38, height: 38 }} />
+            </Pressable>
+            <Pressable style={styles.btLembrete} onPress={esconderLembrete}>
+              <Image source={imgLembrete} style={{ width: 38, height: 38 }} />
+            </Pressable>
+            <Pressable style={styles.btLoja} onPress={esconderLoja}>
+              <Image source={imgLoja} style={{ width: 38, height: 38 }} />
+            </Pressable>
+            <Pressable style={styles.btAddLembrete} onPress={esconderMais}>
+              <Image source={require('./assets/bt-add-lembrete.png')} style={{ width: 60, height: 60 }} />
+            </Pressable>
+            <Image source={require('./assets/nav-bar.png')} style={styles.imageNavBar} />
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    );
+  };
+
+
+// ///////////////////////////////////////////////////////////////////////////////////////////////////
+                                               // estilos
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#E6E6D6'
+    backgroundColor: '#E6E6D6',
   },
   navigationContainer: {
     backgroundColor: '#ecf0f1',
@@ -310,7 +393,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     width: '100%', // Definindo a largura dos botões
     justifyContent: 'center',
-    elevation: 5,
+    elevation: 0,
     shadowColor: '#000', // Cor da sombra (preto)
     shadowOffset: { width: 0, height: 4 }, // Distância da sombra
     shadowOpacity: 0, // Opacidade da sombra
@@ -354,7 +437,8 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     width: '95%', // Definindo a largura dos botões
     // justifyContent: 'center',
-    elevation: 5,
+    elevation: 0,
+    zIndex: 5,
     shadowColor: '#000', // Cor da sombra (preto)
     shadowOffset: { width: 0, height: 4 }, // Distância da sombra
     shadowOpacity: 0, // Opacidade da sombra
@@ -370,9 +454,7 @@ const styles = StyleSheet.create({
     borderColor: '#fff'
 
   },
-  button_salvar: {
-    color: '#FFAF32'
-  },
+
   appName: {
 		fontSize: 28,
 		// fontWeight: "bold",
@@ -434,9 +516,9 @@ const styles = StyleSheet.create({
   },
   box_mais: {
     position: 'absolute',
-    top: height * 0.15,
+    top: height * 0.1,
     width: width * 1,
-    height: height * 0.6,
+    height: height * 0.7,
     alignItems: 'center',
     flex: 0.6,
     borderTopLeftRadius: 10,
@@ -447,6 +529,35 @@ const styles = StyleSheet.create({
     borderColor: '#FF8167',
     marginBottom: 50
   },
+  box_display_alarme: {
+    position: 'absolute',
+    zIndex: 1000,
+    backgroundColor: "#E0FFFF",
+    top: height * 0.4,
+    width: width * 0.8,
+    height: height * 0.2,
+    alignItems: 'center',
+    flex: 0.6,
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+    borderBottomRightRadius: 10,
+    borderBottomLeftRadius: 10,
+    borderWidth: 2,
+    borderColor: '#FFAF32',
+    marginBottom: 50,
+  },
+    ok_box: {
+    position: "absolute",
+    margin:15,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "#FF8167",
+    borderRadius: 10
+    },
+    ok: {
+      fontSize: 20,
+      paddingHorizontal: 15,
+    },
   paragraph: {
     padding: 16,
     fontSize: 15,
@@ -459,12 +570,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0, // Posiciona a navbar na parte inferior
     flexDirection: 'column',
+    zIndex: 0
   },
   imageNavBar: {
     position: 'absolute',
     bottom: -24,
     width: Dimensions.get('window').width, // Largura total da tela
-    zIndex: 0,
+    
   },
   btAddLembrete: {
     position: 'absolute',
@@ -504,7 +616,53 @@ const styles = StyleSheet.create({
     zIndex: 1,
     width: 38,
     height: 38,
+  },
+  weekdayContainer: {
+    flexDirection: 'row', 
+    justifyContent: 'space-between',
+    marginVertical: 10, 
+    paddingHorizontal: 5, 
+  },
+  dayButton: {
+    paddingVertical: 4,
+    paddingHorizontal:10,
+    backgroundColor: '#FFAF32',
+    borderRadius:25, 
+    alignItems: 'center',
+    marginHorizontal: 6,
+  },
+  
+  dayText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold', 
+  },
+  button_salvar_container: {
+    width: '80%', 
+    marginTop: 20,
+    alignItems: 'flex-start', 
+    marginLeft: 20,
+  },
+  button_salvar: {
+    backgroundColor: '#FFAF32',
+    borderRadius: 12,
+    paddingVertical: 13, 
+    paddingHorizontal: 40, 
+    elevation: 2, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 4 }, 
+    shadowOpacity: 0.3,
+    shadowRadius: 8, 
+  },
+  button_salvar_text: {
+    color: '#fff', 
+    fontSize: 16, 
+    fontWeight: 'regular', 
+    textAlign: 'center', 
   }
+  
+  
 });
+
 
 export default App;
