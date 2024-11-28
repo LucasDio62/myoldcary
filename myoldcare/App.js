@@ -104,7 +104,7 @@ const [imgEngrenagem, setImgEngrenagem] = useState(require('./assets/Screenshot_
   const [horas, setHoras] = useState('');
   const [displayAlarme, setDisplayAlarme] = useState(false);
   const [cep, setCep] = useState(null);
-  const [localDesejado, setLocalDesejado] = useState(null);
+  const [localDesejado, setLocalDesejado] = useState('AIzaSyAuQ-f3gheV34l-N0V-porjT-tBjUtUK30');
   const [alarmes, setAlarmes] = useState([
     { nome_alarme: "lucas", horas: 10, minutos: 50, index: 0, status: true },
     { nome_alarme: "dorflex", horas: 11, minutos: 50, index: 1, status: true },
@@ -248,7 +248,9 @@ const [imgEngrenagem, setImgEngrenagem] = useState(require('./assets/Screenshot_
   const openWebsite = async () => {
     const url = `https://www.yelp.com.br/search?find_desc=${localDesejado}&find_loc=${cep}`;
     try {
+      await getLocation()
       const supported = await Linking.canOpenURL(url);
+      console.log(cep)
       if (supported) {
         await Linking.openURL(url);
       } else {
@@ -260,7 +262,7 @@ const [imgEngrenagem, setImgEngrenagem] = useState(require('./assets/Screenshot_
   };
 
   const getCepFromLocation = async (latitude, longitude) => {
-    const apiKey = 'AIzaSyAc4Xs2ArnKA_R_rn5FSZe4oBHgm_fT6Mk'; // Insira sua API key
+    const apiKey = ''; // Insira sua API key
     const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`;
 
     try {
@@ -298,9 +300,14 @@ const [imgEngrenagem, setImgEngrenagem] = useState(require('./assets/Screenshot_
       timeout: 5000, 
     });
     const { latitude, longitude } = location.coords;
-    getCepFromLocation(latitude, longitude);
+    await getCepFromLocation(latitude, longitude);
   };
 
+  useEffect(() => {
+    if (lembrete) {
+      getLocation(); // Chama a função quando "shouldRender" for true
+    }
+  }, [lembrete]);
     return (
       <KeyboardAvoidingView
         style={{ flex: 1 }} // Flex: 1 para que ocupe a tela inteira
