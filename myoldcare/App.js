@@ -32,6 +32,7 @@ const [imgLembrete, setImgLembrete] = useState(require('./assets/bt-lembretes.pn
 const [imgLoja, setImgLoja] = useState(require('./assets/bt-01-removebg-preview.png'));
 const [imgSininho, setImgSininho] = useState(require('./assets/Screenshot_5-removebg-preview.png'));
 const [imgEngrenagem, setImgEngrenagem] = useState(require('./assets/Screenshot_6-removebg-preview (1).png'));
+const [imgCoracao, setImgCoracao] = useState(require('./assets/coracao.png'));
 
   const esconderLembrete = () => {
     //setando o caminho novo dos componentes para trocar a imagem
@@ -104,12 +105,19 @@ const [imgEngrenagem, setImgEngrenagem] = useState(require('./assets/Screenshot_
   const [horas, setHoras] = useState('');
   const [displayAlarme, setDisplayAlarme] = useState(false);
   const [cep, setCep] = useState(null);
-  const [localDesejado, setLocalDesejado] = useState('AIzaSyAuQ-f3gheV34l-N0V-porjT-tBjUtUK30');
+  const [localDesejado, setLocalDesejado] = useState('');
+  const [nomeCompleto, setNomeCompleto] = useState('');
+  const [sugestao, setSugestao] = useState('');
   const [alarmes, setAlarmes] = useState([
-    { nome_alarme: "lucas", horas: 10, minutos: 50, index: 0, status: true },
-    { nome_alarme: "dorflex", horas: 11, minutos: 50, index: 1, status: true },
-    { nome_alarme: "remedio", horas: 10, minutos: 50, index: 2, status: true },
-    { nome_alarme: "buscopan", horas: 22, minutos: 30, index: 3, status: true },
+    { nome_alarme: "lucas", horas: '10', minutos: '50', index: 0, status: true },
+    { nome_alarme: "dorflex", horas: '11', minutos: '50', index: 1, status: true },
+    { nome_alarme: "remedio", horas: '10', minutos: '50', index: 2, status: true },
+    { nome_alarme: "buscopan", horas: '22', minutos: '30', index: 3, status: true },
+  ])
+  const [sugestoes, setSugestoes] = useState([
+    { nome_completo: "adam felix portela dantas", sugestao: "arrumar navbar" },
+    { nome_completo: "maria silva", sugestao: "adicionar rodapé" },
+    { nome_completo: "joão pereira", sugestao: "melhorar desempenho" },
   ])
   const [sound, setSound] = useState();
 
@@ -262,7 +270,7 @@ const [imgEngrenagem, setImgEngrenagem] = useState(require('./assets/Screenshot_
   };
 
   const getCepFromLocation = async (latitude, longitude) => {
-    const apiKey = ''; // Insira sua API key
+    const apiKey = 'AIzaSyAuQ-f3gheV34l-N0V-porjT-tBjUtUK30'; // Insira sua API key
     const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`;
 
     try {
@@ -305,9 +313,28 @@ const [imgEngrenagem, setImgEngrenagem] = useState(require('./assets/Screenshot_
 
   useEffect(() => {
     if (lembrete) {
-      getLocation(); // Chama a função quando "shouldRender" for true
+      getLocation(); 
     }
   }, [lembrete]);
+  
+  const adicionarSugestao = () => {
+    if (nomeCompleto.trim() === "" || sugestao.trim() === "") {
+      alert("Por favor, preencha todos os campos!");
+      return;
+    }
+
+    const novaSugestaoObj = {
+      nome_completo: nomeCompleto,
+      sugestao: sugestao,
+    };
+
+    setSugestoes((prevSugestoes) => [...prevSugestoes, novaSugestaoObj]);
+
+    // Limpar os campos
+    setNomeCompleto("");
+    setSugestao("");
+  };
+  
     return (
       <KeyboardAvoidingView
         style={{ flex: 1 }} // Flex: 1 para que ocupe a tela inteira
@@ -342,9 +369,9 @@ const [imgEngrenagem, setImgEngrenagem] = useState(require('./assets/Screenshot_
   
           {loja && (
             <View style={[styles.box, { width: width * 0.9 }]}>
-              <Text style={[styles.boxText]}>Pesquise por um local de interesse</Text>
+              <Text style={[styles.texto_loja]}>PESQUISE POR UM LOCAL DE INTERESSE</Text>
               <TextInput
-                style={styles.input}
+                style={styles.input2}
                 value={localDesejado}
                 onChangeText={setLocalDesejado}
                 placeholder="Digite aqui . . ."
@@ -352,15 +379,38 @@ const [imgEngrenagem, setImgEngrenagem] = useState(require('./assets/Screenshot_
 
               {/* <Button title="Obter CEP Atual" onPress={getLocation} /> */}
       {/* {cep && <Text style={{ marginTop: 20 }}>CEP Atual: {cep}</Text>} */}
-              <Pressable onPress={openWebsite}>
-                <Text>Navegar <Image source={require('./assets/link-externo.png')} style={styles.imgLinkExterno} /></Text>
+              <Pressable onPress={openWebsite} style={styles.button_navegar}>
+                <Text>NAVEGAR <Image source={require('./assets/link-externo.png')} style={styles.imgLinkExterno}/></Text>
               </Pressable>
             </View>
           )}
   
           {sininho && (
             <View style={[styles.box, { width: width * 0.9 }]}>
-              <Text style={[styles.boxText]}>Este é o componente sininho</Text>
+              <Text style={[styles.texto_loja]}>DEIXE SUA SUGESTÃO <Image source={imgCoracao} style={{ width: 18, height: 18 }}/></Text>
+                    <TextInput
+              style={styles.input2}
+              value={nomeCompleto}
+              onChangeText={setNomeCompleto}
+              placeholder="Digite aqui seu nome completo"
+            />
+                    <TextInput
+              style={styles.input2}
+              value={sugestao}
+              onChangeText={setSugestao}
+              placeholder="Digite aqui sua sugestão"
+            />
+              <View style={styles.parent1}>
+              <ScrollView style={styles.box2}>
+                    {sugestoes.map((item, index) => (
+                <View key={index} style={styles.rectangle_sugestao}>
+                  <Text style={styles.nome}>{item.nome_completo}</Text>
+                  <Text style={styles.sugestao}>{item.sugestao}</Text>
+                </View>
+              ))}
+              </ScrollView>
+                <Button title="Salvar Sugestão" onPress={adicionarSugestao}/>;
+              </View>
             </View>
           )}
   
@@ -401,13 +451,13 @@ const [imgEngrenagem, setImgEngrenagem] = useState(require('./assets/Screenshot_
     )}
 
     {/* Substitua este trecho pelo código corrigido */}
-    <View style={styles.weekdayContainer}>
+    {/* <View style={styles.weekdayContainer}>
       {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((day, index) => (
         <Pressable key={index} style={styles.dayButton}>
           <Text style={styles.dayText}>{day}</Text>
         </Pressable>
       ))}
-    </View>
+    </View> */}
     {/* Fim da substituição */}
     
     <View style={styles.button_input}>
@@ -461,6 +511,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#E6E6D6',
   },
+  nome: {
+    fontSize: 16,
+    fontWeight: "bold",
+    margin: 5,
+    marginLeft: 10,
+    marginBottom: 0,
+  },
+  sugestao: {
+    fontSize: 14,
+    color: "#555",
+    margin: 4,
+    marginLeft: 7
+  },
   navigationContainer: {
     backgroundColor: '#ecf0f1',
   },
@@ -480,13 +543,34 @@ const styles = StyleSheet.create({
     // alignItems: 'center',
   },
   parent: {
+    // flex: 1,
     flexDirection: 'column',
-    justifyContent: 'flex-start',
+    // justifyContent: 'flex-end',
     alignItems: 'center',
+    width: '100%',
+  },
+  parent1: {
+    // flex: 1,
+    position: "absolute",
+    // flexDirection: 'column',
+    // justifyContent: 'flex-end',
+    // borderWidth: 3,
+    // borderColor: "blue",
+    // alignItems: 'center',
+    bottom: 0,
+    height: '45%',
     width: '100%',
   },
   rectangle: {
     // height: '5%',        // 25% da altura do pai
+    width: '95%',         // 95% da largura do pai
+    backgroundColor: '#FF8066',  // Cor de fundo do retângulo
+    marginBottom: 15,     // Espaço entre os retângulos
+    marginLeft: "2.5%",
+    borderRadius: 15,      // Bordas arredondadas
+  },
+  rectangle_sugestao: {
+    height: 80,     // 25% da altura do pai
     width: '95%',         // 95% da largura do pai
     backgroundColor: '#FF8066',  // Cor de fundo do retângulo
     marginBottom: 15,     // Espaço entre os retângulos
@@ -567,6 +651,17 @@ const styles = StyleSheet.create({
     paddingLeft: 8,
     marginBottom: 16,
   },
+  input2: {
+    color: 'black',
+    width: '100%',
+    height: 40,
+    borderColor: '#FF765A',
+    // elevation: 5,
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingLeft: 8,
+    marginBottom: 16,
+  },
   text: {
     fontSize: 16,
     marginTop: 8,
@@ -580,12 +675,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 0.8,
     borderColor: '#FF8167',
-    marginBottom: 50
+    marginBottom: 50,
+    // borderWidth: 3,
+    // borderColor: '#FF8167',
   },
   box1: {
     width: '100%',
     height: "100%",
     borderColor: '#FF8167',
+  },
+  box2: {
+    width: '100%',
+    height: "10%",
+    // marginBottom: 20
+    // borderWidth: 3,
+    // borderColor: 'red',
+    // borderColor: '#FF8167',
   },
   box_mais: {
     position: 'absolute',
@@ -601,6 +706,20 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: '#FF8167',
     marginBottom: 50
+  },
+  box_mais1: {
+    position: 'absolute',
+    bottom: 0,
+    // top: height * 0.1,
+    width: width * 0.9,
+    height: height * 0.5,
+    // flex: 0.6,
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+    borderBottomRightRadius: 10,
+    borderBottomLeftRadius: 10,
+    borderWidth: 3,
+    borderColor: '#FF8167',
   },
   box_display_alarme: {
     position: 'absolute',
@@ -748,6 +867,27 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 }, 
     shadowOpacity: 0.3,
     shadowRadius: 8, 
+  },
+  button_navegar: {
+    position: "absolute",
+    backgroundColor: '#FFAF32',
+    borderRadius: 12,
+    paddingVertical: 13, 
+    paddingHorizontal: 40, 
+    elevation: 2, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 4 }, 
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    bottom: 80
+  },
+  texto_loja: {
+    fontSize: 16,
+    marginBottom: 20,
+    backgroundColor: "#FF8167",
+    padding: 12,
+    borderRadius: 14,
+    color:  "#FFf"
   },
   button_salvar_text: {
     color: '#fff', 
