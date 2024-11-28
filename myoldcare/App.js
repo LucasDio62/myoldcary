@@ -270,7 +270,7 @@ const [imgCoracao, setImgCoracao] = useState(require('./assets/coracao.png'));
   };
 
   const getCepFromLocation = async (latitude, longitude) => {
-    const apiKey = 'AIzaSyAuQ-f3gheV34l-N0V-porjT-tBjUtUK30'; // Insira sua API key
+    const apiKey = ''; // Insira sua API key
     const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`;
 
     try {
