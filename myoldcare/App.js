@@ -110,14 +110,11 @@ const [imgCoracao, setImgCoracao] = useState(require('./assets/coracao.png'));
   const [sugestao, setSugestao] = useState('');
   const [alarmes, setAlarmes] = useState([
     { nome_alarme: "lucas", horas: '10', minutos: '50', index: 0, status: true },
-    { nome_alarme: "dorflex", horas: '11', minutos: '50', index: 1, status: true },
-    { nome_alarme: "remedio", horas: '10', minutos: '50', index: 2, status: true },
-    { nome_alarme: "buscopan", horas: '22', minutos: '30', index: 3, status: true },
   ])
   const [sugestoes, setSugestoes] = useState([
-    { nome_completo: "adam felix portela dantas", sugestao: "arrumar navbar" },
-    { nome_completo: "maria silva", sugestao: "adicionar rodapé" },
-    { nome_completo: "joão pereira", sugestao: "melhorar desempenho" },
+    { nome_completo: "Adam Portela", sugestao: "arrumar navbar" },
+    { nome_completo: "Maria Silva", sugestao: "acesso as configurações" },
+    { nome_completo: "João Pereira", sugestao: "melhorar desempenho" },
   ])
   const [sound, setSound] = useState();
 
@@ -270,7 +267,7 @@ const [imgCoracao, setImgCoracao] = useState(require('./assets/coracao.png'));
   };
 
   const getCepFromLocation = async (latitude, longitude) => {
-    const apiKey = ''; // Insira sua API key
+    const apiKey = 'AIzaSyAuQ-f3gheV34l-N0V-porjT-tBjUtUK30'; // Insira sua API key
     const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`;
 
     try {
@@ -434,6 +431,7 @@ const [imgCoracao, setImgCoracao] = useState(require('./assets/coracao.png'));
   {mais && (
   <View style={[styles.box_mais, { width: width * 0.9 }]}>
     <View style={styles.header}></View>
+      <Text style={styles.altereText} onPress={showTimePickerModal}>ALTERE A HORA</Text>
     <View style={styles.clockContainer}>
       <Text style={styles.clockText} onPress={showTimePickerModal}>
         {`${alarmTime.getHours().toString().padStart(2, '0')}:${alarmTime.getMinutes().toString().padStart(2, '0')}`}
@@ -467,6 +465,7 @@ const [imgCoracao, setImgCoracao] = useState(require('./assets/coracao.png'));
         value={text}
         onChangeText={setText}
         placeholder="Digite aqui . . ."
+        placeholderTextColor="#FFF"
       />
     </View>
     <View style={styles.button_salvar_container}>
@@ -516,11 +515,12 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     margin: 5,
     marginLeft: 10,
+    color: "#fff",
     marginBottom: 0,
   },
   sugestao: {
     fontSize: 14,
-    color: "#555",
+    color: "#fff",
     margin: 4,
     marginLeft: 7
   },
@@ -570,7 +570,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,      // Bordas arredondadas
   },
   rectangle_sugestao: {
-    height: 80,     // 25% da altura do pai
+    height: 120,     // 25% da altura do pai
     width: '95%',         // 95% da largura do pai
     backgroundColor: '#FF8066',  // Cor de fundo do retângulo
     marginBottom: 15,     // Espaço entre os retângulos
@@ -608,11 +608,12 @@ const styles = StyleSheet.create({
   },
   text_input:{
     marginBottom: 15,
-    color: '#Fff',
+    color: '#FFF',
+    fontWeight: 'bold',
     paddingBottom: 10,
     width: "100%",
     borderBottomWidth: 1,
-    borderColor: '#fff'
+    borderColor: '#A9A9A9'
 
   },
 
@@ -621,19 +622,33 @@ const styles = StyleSheet.create({
 		// fontWeight: "bold",
 		color: "#FFAF32", // Set your desired text color
 	},
+  altereText: {
+    position: 'absolute',
+    top: 30,
+    fontSize: 30,
+    color: '#8BC1C1',
+    fontWeight: 'bold',
+    textShadowColor: '#FFF', // Cor da sombra
+    textShadowOffset: {        // Deslocamento da sombra
+      width: 1,  // Deslocamento horizontal (x)
+      height: 2, // Deslocamento vertical (y)
+    },
+    textShadowRadius: 4, // Adiciona o "desfoque" da sombra
+  },
   clockContainer: {
 		flexDirection: "row",
 		alignItems: "center",
-		marginBottom: 20,
-	},
+		marginBottom: 30,
+  },
   clockText: {
 		fontSize: 80,
 		marginRight: 10,
-    borderBottomWidth: 3,
+    top: 20,
+    borderBottomWidth: 2,
     borderColor: "#FF765A",
 		color: "#fff", // Set your desired text color
-    padding: 35,
-    paddingBottom: 10,
+    padding: 50,
+    paddingBottom: 25,
     textShadowColor: '#778899',    // Cor da sombra
     textShadowOffset: {         // Deslocamento da sombra
       width: 2,  // Deslocamento horizontal (x)
@@ -786,7 +801,7 @@ const styles = StyleSheet.create({
   imageNavBar: {
     position: 'absolute',
     bottom: -24,
-    width: Dimensions.get('window').width, // Largura total da tela
+    // width: Dimensions.get('window').width, // Largura total da tela
   },
   imgLinkExterno: {
     width: 20,
