@@ -1,6 +1,7 @@
 import React, {useRef, useState, useEffect } from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Audio } from 'expo-av';
+import * as Location from 'expo-location';
 
 import {
   KeyboardAvoidingView, 
@@ -14,7 +15,8 @@ import {
   ScrollView, 
   Alert, 
   Dimensions,
-  StyleSheet
+  StyleSheet,
+  Linking
 } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
@@ -101,6 +103,8 @@ const [imgEngrenagem, setImgEngrenagem] = useState(require('./assets/Screenshot_
   const [text1, setText1] = useState('');
   const [horas, setHoras] = useState('');
   const [displayAlarme, setDisplayAlarme] = useState(false);
+  const [cep, setCep] = useState(null);
+  const [localDesejado, setLocalDesejado] = useState(null);
   const [alarmes, setAlarmes] = useState([
     { nome_alarme: "lucas", horas: 10, minutos: 50, index: 0, status: true },
     { nome_alarme: "dorflex", horas: 11, minutos: 50, index: 1, status: true },
@@ -173,8 +177,8 @@ const [imgEngrenagem, setImgEngrenagem] = useState(require('./assets/Screenshot_
     var noveo_alarme = [...alarmes]
     var alarme = {
       nome_alarme: nome_alarme,
-      horas: alarmTime.getHours(), 
-      minutos: alarmTime.getMinutes(),
+      horas: alarmTime.getHours().toString().padStart(2, '0'),
+      minutos: alarmTime.getMinutes().toString().padStart(2, '0'),
       index: (alarmes[alarmes.length - 1].index +1),
       status: true
     }
@@ -215,15 +219,16 @@ const [imgEngrenagem, setImgEngrenagem] = useState(require('./assets/Screenshot_
   useEffect(() => {
     const checkAlarm = setInterval(() => {
 			const currentTime = new Date();
-
-			if (verificarAlarme(currentTime.getHours(), currentTime.getMinutes(), currentTime.getSeconds()) && currentTime.getSeconds() <= 1) {
+      var horas = currentTime.getHours().toString().padStart(2, '0')
+      var minutos = currentTime.getMinutes().toString().padStart(2, '0')
+			if (verificarAlarme(horas, minutos, currentTime.getSeconds()) && currentTime.getSeconds() <= 1) {
 				// mensagens que vao ser exibidas quando o alarme tocar(nome do alarme e hora do mesmo)
-        var texto1 = retornarText(currentTime.getHours(), currentTime.getMinutes()).alarme;
-        var texto2 = retornarText(currentTime.getHours(), currentTime.getMinutes()).horas;
-        var texto3 = retornarText(currentTime.getHours(), currentTime.getMinutes()).minutos;
-        var horas = `${texto2} : ${texto3}`
+        var texto1 = retornarText(horas, minutos).alarme;
+        var texto2 = retornarText(horas, minutos).horas;
+        var texto3 = retornarText(horas, minutos).minutos;
+        var horasText = `${texto2} : ${texto3}`
         setText1(texto1);
-        setHoras(horas);
+        setHoras(horasText);
 
         console.log(texto1, texto2, texto3)
         setDisplayAlarme(true)
@@ -240,6 +245,61 @@ const [imgEngrenagem, setImgEngrenagem] = useState(require('./assets/Screenshot_
     return () => clearInterval(checkAlarm);
   }, [alarmes]);
   
+  const openWebsite = async () => {
+    const url = `https://www.yelp.com.br/search?find_desc=${localDesejado}&find_loc=${cep}`;
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert(`Não foi possível abrir o site: ${url}`);
+      }
+    } catch (error) {
+      Alert.alert('Ocorreu um erro ao tentar abrir o site.', error.message);
+    }
+  };
+
+  const getCepFromLocation = async (latitude, longitude) => {
+    const apiKey = 'AIzaSyAc4Xs2ArnKA_R_rn5FSZe4oBHgm_fT6Mk'; // Insira sua API key
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`;
+
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data.results && data.results.length > 0) {
+        const addressComponents = data.results[0].address_components;
+        const postalCode = addressComponents.find(component =>
+          component.types.includes('postal_code')
+        );
+        if (postalCode) {
+          setCep(postalCode.long_name);
+        } else {
+          Alert.alert('CEP não encontrado.');
+        }
+      } else {
+        Alert.alert('Não foi possível obter o endereço.');
+      }
+    } catch (error) {
+      Alert.alert('Erro ao buscar o CEP:', error.message);
+    }
+  };
+
+  const getLocation = async () => {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permissão negada!', 'Permita o acesso à localização nas configurações.');
+      return;
+    }
+
+    const location = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.Highest, // Máxima precisão
+      enableHighAccuracy: true, // Prioriza maior precisão (mesmo consumindo mais bateria)
+      timeout: 5000, 
+    });
+    const { latitude, longitude } = location.coords;
+    getCepFromLocation(latitude, longitude);
+  };
 
     return (
       <KeyboardAvoidingView
@@ -265,8 +325,8 @@ const [imgEngrenagem, setImgEngrenagem] = useState(require('./assets/Screenshot_
 
 {displayAlarme && (
           <View style={styles.box_display_alarme}>
-              <Text>{text1}</Text>
-              <Text>{horas}</Text>
+              <Text style={styles.msg_alarme}>{text1}</Text>
+              <Text style={styles.msg_horas}>{horas}</Text>
             <View style={styles.ok_box}>
               <Text style={styles.ok} onPress={pararSom}>OK</Text>
             </View>
@@ -275,7 +335,19 @@ const [imgEngrenagem, setImgEngrenagem] = useState(require('./assets/Screenshot_
   
           {loja && (
             <View style={[styles.box, { width: width * 0.9 }]}>
-              <Text style={[styles.boxText]}>Este é o componente loja</Text>
+              <Text style={[styles.boxText]}>Pesquise por um local de interesse</Text>
+              <TextInput
+                style={styles.input}
+                value={localDesejado}
+                onChangeText={setLocalDesejado}
+                placeholder="Digite aqui . . ."
+              />
+
+              {/* <Button title="Obter CEP Atual" onPress={getLocation} /> */}
+      {/* {cep && <Text style={{ marginTop: 20 }}>CEP Atual: {cep}</Text>} */}
+              <Pressable onPress={openWebsite}>
+                <Text>Navegar <Image source={require('./assets/link-externo.png')} style={styles.imgLinkExterno} /></Text>
+              </Pressable>
             </View>
           )}
   
@@ -436,14 +508,12 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     borderRadius: 15,
     width: '95%', // Definindo a largura dos botões
-    // justifyContent: 'center',
     elevation: 0,
     zIndex: 5,
     shadowColor: '#000', // Cor da sombra (preto)
     shadowOffset: { width: 0, height: 4 }, // Distância da sombra
     shadowOpacity: 0, // Opacidade da sombra
     shadowRadius: 10, // Raio da sombra
-    // alignItems: 'center',
   },
   text_input:{
     marginBottom: 15,
@@ -502,17 +572,13 @@ const styles = StyleSheet.create({
   box: {
     alignItems: 'center',
     flex: 0.8,
-    // borderWidth: 3,
     borderColor: '#FF8167',
     marginBottom: 50
   },
   box1: {
     width: '100%',
-    // alignItems: "center",
-    // borderWidth: 3,
     height: "100%",
     borderColor: '#FF8167',
-    // marginBottom: 50
   },
   box_mais: {
     position: 'absolute',
@@ -545,6 +611,25 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#FFAF32',
     marginBottom: 50,
+    shadowColor: '#000', // Cor da sombra (preto)
+    shadowOffset: { width: 0, height: 4 }, // Distância da sombra
+    shadowOpacity: 0, // Opacidade da sombra
+    shadowRadius: 10, // Raio da sombra
+  },
+  msg_alarme: {
+    position: "absolute",
+    fontSize: 35,
+    margin: 15,
+    marginTop: 0,
+    left: 0
+  },
+  msg_horas: {
+    position: "absolute",
+    fontSize: 35,
+    margin: 20,
+    marginBottom: 25,
+    left: 0,
+    bottom: 0
   },
     ok_box: {
     position: "absolute",
@@ -576,7 +661,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: -24,
     width: Dimensions.get('window').width, // Largura total da tela
-    
+  },
+  imgLinkExterno: {
+    width: 20,
+    height: 20,
   },
   btAddLembrete: {
     position: 'absolute',
@@ -661,8 +749,5 @@ const styles = StyleSheet.create({
     textAlign: 'center', 
   }
   
-  
 });
-
-
 export default App;
