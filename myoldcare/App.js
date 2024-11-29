@@ -3,19 +3,21 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Audio } from 'expo-av';
 import * as Location from 'expo-location';
 
-import {
-  KeyboardAvoidingView, 
+import { 
   Platform, 
   View, 
   Text, 
-  Button, 
+  Button,
+  KeyboardAvoidingView,
+  TouchableWithoutFeedback,
+  Keyboard,
   TextInput, 
   Image, 
   Pressable, 
   ScrollView, 
   Alert, 
   Dimensions,
-  StyleSheet,
+  StyleSheet, 
   Linking
 } from 'react-native';
 
@@ -62,6 +64,7 @@ const [imgCoracao, setImgCoracao] = useState(require('./assets/coracao.png'));
   };
   const esconderSininho = () => {
     //setando o caminho novo dos componentes para trocar a imagem
+    // setImgSOS(require('./assets/SOS.png'))
     setImgLembrete(require('./assets/Screenshot_2-removebg-preview.png'));
     setImgLoja(require('./assets/bt-01-removebg-preview.png'));
     setImgSininho(require('./assets/Screenshot_6-removebg-preview.png'));
@@ -332,11 +335,13 @@ const [imgCoracao, setImgCoracao] = useState(require('./assets/coracao.png'));
     setSugestao("");
   };
   
-    return (
+    return (  
       <KeyboardAvoidingView
-        style={{ flex: 1 }} // Flex: 1 para que ocupe a tela inteira
-      >
-        <View style={styles.container}>
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={styles.container}>
+          {!sininho && 
+        <Image source={require('./assets/SOS.png')} style={styles.btnSOS}/>
+          }
           {lembrete && (
             <View style={[styles.box, { width: width * 0.9 }]}>
               <View style={styles.parent}>
@@ -365,6 +370,7 @@ const [imgCoracao, setImgCoracao] = useState(require('./assets/coracao.png'));
         )}
   
           {loja && (
+            <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
             <View style={[styles.box, { width: width * 0.9 }]}>
               <Text style={[styles.texto_loja]}>PESQUISE POR UM LOCAL DE INTERESSE</Text>
               <TextInput
@@ -373,16 +379,17 @@ const [imgCoracao, setImgCoracao] = useState(require('./assets/coracao.png'));
                 onChangeText={setLocalDesejado}
                 placeholder="Digite aqui . . ."
               />
-
               {/* <Button title="Obter CEP Atual" onPress={getLocation} /> */}
       {/* {cep && <Text style={{ marginTop: 20 }}>CEP Atual: {cep}</Text>} */}
               <Pressable onPress={openWebsite} style={styles.button_navegar}>
                 <Text>NAVEGAR <Image source={require('./assets/link-externo.png')} style={styles.imgLinkExterno}/></Text>
               </Pressable>
             </View>
+            </TouchableWithoutFeedback>
           )}
   
           {sininho && (
+            <TouchableWithoutFeedback>
             <View style={[styles.box, { width: width * 0.9 }]}>
               <Text style={[styles.texto_loja]}>DEIXE SUA SUGESTÃO <Image source={imgCoracao} style={{ width: 18, height: 18 }}/></Text>
                     <TextInput
@@ -409,6 +416,7 @@ const [imgCoracao, setImgCoracao] = useState(require('./assets/coracao.png'));
                 <Button title="Salvar Sugestão" onPress={adicionarSugestao}/>;
               </View>
             </View>
+          </TouchableWithoutFeedback>
           )}
   
           {engrenagem && (
@@ -495,7 +503,6 @@ const [imgCoracao, setImgCoracao] = useState(require('./assets/coracao.png'));
             </Pressable>
             <Image source={require('./assets/nav-bar.png')} style={styles.imageNavBar} />
           </View>
-        </View>
       </KeyboardAvoidingView>
     );
   };
@@ -791,21 +798,30 @@ const styles = StyleSheet.create({
   },
   navBar: {
     width: '100%',
-    backgroundColor: '#E5E5E5', // Cor de fundo da navbar
+    backgroundColor: '#E5E5E5',
     alignItems: 'center',
+    justifyContent: 'center',
     position: 'absolute',
-    bottom: 0, // Posiciona a navbar na parte inferior
-    flexDirection: 'column',
-    zIndex: 0
+    bottom: 0, // Navbar fixa na parte inferior
+    padding: 10,
   },
   imageNavBar: {
     position: 'absolute',
-    bottom: -24,
+    bottom: 0.3,
     // width: Dimensions.get('window').width, // Largura total da tela
   },
   imgLinkExterno: {
     width: 20,
     height: 20,
+  },
+
+  btnSOS:{
+    position: 'absolute',
+    bottom: 110,
+    zIndex: 1,
+    width: 130,
+    height: 100,
+    right: 0,
   },
   btAddLembrete: {
     position: 'absolute',
